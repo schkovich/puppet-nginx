@@ -18,6 +18,7 @@ class nginx::package::debian {
 
   package { 'nginx':
     ensure  => present,
+    provider => 'apt',
     require => Anchor['nginx::apt_repo'],
   }
 
