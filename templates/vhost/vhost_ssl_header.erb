@@ -5,6 +5,10 @@ server {
   <% end %>
   server_name  <%= @rewrite_www_to_non_www ? @name.gsub(/^www\./, '') : @server_name.join(" ") %>;
 
+<% if defined? @www_root -%>
+    root  <%= @www_root %>;
+<% end -%>
+
   ssl on;
 
   ssl_certificate           <%= @ssl_cert %>;
