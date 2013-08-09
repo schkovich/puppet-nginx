@@ -133,7 +133,7 @@ define nginx::resource::location (
     $content_real = template('nginx/vhost/vhost_location_empty.erb')
   }
 
-  if $fastcgi != undef and !defined(File['/etc/nginx/fastcgi_params']) { 
+  if $fastcgi != undef and !defined(File['/etc/nginx/fastcgi_params']) {
     file { '/etc/nginx/fastcgi_params':
       ensure  => present,
       mode    => '0770',
@@ -161,7 +161,7 @@ define nginx::resource::location (
   if ($auth_basic_user_file != undef) {
     #Generate htpasswd with provided file-locations
     file { "${nginx::params::nx_conf_dir}/${name}_htpasswd":
-      ensure => $ensure,
+      ensure => $ensure_real,
       mode   => '0644',
       source => $auth_basic_user_file,
     }
