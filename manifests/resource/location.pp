@@ -73,6 +73,7 @@ define nginx::resource::location (
     'index.html',
     'index.htm',
     'index.php'],
+  $client_max_body_size = undef,
   $proxy                = undef,
   $proxy_read_timeout   = $nginx::params::nx_proxy_read_timeout,
   $fastcgi              = undef,

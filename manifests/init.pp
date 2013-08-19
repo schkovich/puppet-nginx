@@ -39,6 +39,7 @@ class nginx (
   $proxy_cache_keys_zone  = $nginx::params::nx_proxy_cache_keys_zone,
   $proxy_cache_max_size   = $nginx::params::nx_proxy_cache_max_size,
   $proxy_cache_inactive   = $nginx::params::nx_proxy_cache_inactive,
+  $client_max_body_size   = $nginx::params::nx_client_max_body_size,
   $configtest_enable      = $nginx::params::nx_configtest_enable,
   $service_restart        = $nginx::params::nx_service_restart,
   $mail                   = $nginx::params::nx_mail,
@@ -46,7 +47,7 @@ class nginx (
   $http_cfg_append        = $nginx::params::nx_http_cfg_append,
   $nginx_vhosts           = {},
   $nginx_upstreams        = {},
-  $nginx_locations        = {},
+  $nginx_locations        = {}
 ) inherits nginx::params {
 
   include stdlib
