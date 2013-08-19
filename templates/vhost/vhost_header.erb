@@ -10,6 +10,10 @@ server {
     root  <%= @www_root %>;
 <% end -%>
 
+<% if @client_max_body_size -%>
+    client_max_body_size <%= @client_max_body_size %>;
+<% end -%>
+
 <% if defined? auth_basic -%>
   auth_basic           "<%= @auth_basic %>";
 <% end -%>

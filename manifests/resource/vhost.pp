@@ -87,6 +87,7 @@ define nginx::resource::vhost (
     'index.html',
     'index.htm',
     'index.php'],
+  $client_max_body_size   = undef,
   $server_name            = [$name],
   $www_root               = undef,
   $rewrite_www_to_non_www = false,
@@ -159,6 +160,7 @@ define nginx::resource::vhost (
     try_files            => $try_files,
     www_root             => $www_root,
     index_files          => $index_files,
+    client_max_body_size =>   $client_max_body_size,
     location_custom_cfg  => $location_custom_cfg,
     notify               => Class['nginx::service'],
   }
