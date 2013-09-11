@@ -216,22 +216,5 @@ define nginx::resource::vhost (
       content => template('nginx/vhost/vhost_ssl_footer.erb'),
       notify  => Class['nginx::service'],
     }
-
-    #Generate ssl key/cert with provided file-locations
-
-    $cert = regsubst($name,' ','_')
-
-    # Check if the file has been defined before creating the file to
-    # avoid the error when using wildcard cert on the multiple vhosts
-    ensure_resource('file', "${nginx::params::nx_conf_dir}/${cert}.crt", {
-      ensure => $ensure,
-      mode   => '0644',
-      source => $ssl_cert,
-    })
-    ensure_resource('file', "${nginx::params::nx_conf_dir}/${cert}.key", {
-      ensure => $ensure,
-      mode   => '0644',
-      source => $ssl_key,
-    })
   }
 }
