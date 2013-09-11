@@ -17,11 +17,13 @@ class nginx::service(
   $configtest_enable = $nginx::params::nx_configtest_enable,
   $service_restart   = $nginx::params::nx_service_restart
 ) {
+
+  $command = '${#files[*]}'
   exec { 'rebuild-nginx-vhosts':
     command     => "/bin/cat ${nginx::params::nx_temp_dir}/nginx.d/* > ${nginx::params::nx_conf_dir}/conf.d/vhost_autogen.conf",
-    path    => ["/usr/bin", "/usr/sbin"],
+    path        => ["/usr/bin", "/usr/sbin"],
     refreshonly => true,
-    unless      => "shopt -s nullglob dotglob && files=(${nginx::params::nx_temp_dir}/nginx.d/*) && ! (( ${#files[*]} )) && shopt -u nullglob dotglo*",
+    unless      => "shopt -s nullglob dotglob && files=(${nginx::params::nx_temp_dir}/nginx.d/*) && ! (( ${command} )) && shopt -u nullglob dotglob",
     subscribe   => File["${nginx::params::nx_temp_dir}/nginx.d"],
   }
   exec { 'rebuild-nginx-mailhosts':
