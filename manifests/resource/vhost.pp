@@ -7,6 +7,8 @@
 #   [*listen_ip*]           - Default IP Address for NGINX to listen with this vHost on. Defaults to all interfaces (*)
 #   [*listen_port*]         - Default IP Port for NGINX to listen with this vHost on. Defaults to TCP 80
 #   [*listen_options*]      - Extra options for listen directive like 'default' to catchall. Undef by default.
+#   [*location_allow*]      - Array: Locations to allow connections from.
+#   [*location_deny*]       - Array: Locations to deny connections from.
 #   [*ipv6_enable*]         - BOOL value to enable/disable IPv6 support (false|true). Module will check to see if IPv6
 #                             support exists on your system before enabling.
 #   [*ipv6_listen_ip*]      - Default IPv6 Address for NGINX to listen with this vHost on. Defaults to all interfaces (::)
@@ -64,6 +66,8 @@ define nginx::resource::vhost (
   $listen_ip              = '*',
   $listen_port            = '80',
   $listen_options         = undef,
+  $location_allow         = [],
+  $location_deny          = [],
   $ipv6_enable            = false,
   $ipv6_listen_ip         = '::',
   $ipv6_listen_port       = '80',
@@ -101,6 +105,9 @@ define nginx::resource::vhost (
   $vhost_cfg_append       = undef,
   $include_files          = undef
 ) {
+
+  validate_array($location_allow)
+  validate_array($location_deny)
 
   File {
     ensure => $ensure ? {
@@ -150,6 +157,8 @@ define nginx::resource::vhost (
     ssl                  => $ssl,
     ssl_only             => $ssl_only,
     location             => '/',
+    location_allow       => $location_allow,
+    location_deny        => $location_deny,
     proxy                => $proxy,
     proxy_read_timeout   => $proxy_read_timeout,
     proxy_cache          => $proxy_cache,
@@ -160,7 +169,7 @@ define nginx::resource::vhost (
     try_files            => $try_files,
     www_root             => $www_root,
     index_files          => $index_files,
-    client_max_body_size =>   $client_max_body_size,
+    client_max_body_size => $client_max_body_size,
     location_custom_cfg  => $location_custom_cfg,
     notify               => Class['nginx::service'],
   }
@@ -204,8 +213,25 @@ define nginx::resource::vhost (
         'absent' => absent,
         default  => 'file',
       },
-      content => template('nginx/vhost/vhost_footer.erb'),
+      content => template('nginx/vhost/vhost_ssl_footer.erb'),
       notify  => Class['nginx::service'],
     }
+
+    #Generate ssl key/cert with provided file-locations
+
+    $cert = regsubst($name,' ','_')
+
+    # Check if the file has been defined before creating the file to
+    # avoid the error when using wildcard cert on the multiple vhosts
+    ensure_resource('file', "${nginx::params::nx_conf_dir}/${cert}.crt", {
+      ensure => $ensure,
+      mode   => '0644',
+      source => $ssl_cert,
+    })
+    ensure_resource('file', "${nginx::params::nx_conf_dir}/${cert}.key", {
+      ensure => $ensure,
+      mode   => '0644',
+      source => $ssl_key,
+    })
   }
 }
