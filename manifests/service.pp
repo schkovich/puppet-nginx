@@ -20,7 +20,7 @@ class nginx::service(
 
   $command = '${#files[*]}'
   exec { 'rebuild-nginx-vhosts':
-    command     => "/bin/cat ${nginx::params::nx_temp_dir}/nginx.d/* > ${nginx::params::nx_conf_dir}/conf.d/vhost_autogen.conf",
+    command     => "/bin/cat ${nginx::params::nx_temp_dir}/nginx.d/* > ${nginx::params::nx_vhost_dir}/vhost_autogen.conf",
     path        => ["/usr/bin", "/usr/sbin", '/bin/'],
     provider    => 'shell',
     refreshonly => true,

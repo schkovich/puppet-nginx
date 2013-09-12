@@ -18,6 +18,10 @@ class nginx::params {
   $nx_run_dir                 = '/var/nginx'
 
   $nx_conf_dir                = '/etc/nginx'
+  $nx_vhost_dir = $operatingsystem ? {
+  /(?i-mx:ubuntu|debian)/        => "$nx_conf_dir/sites-enabled",
+  /(?i-mx:centos|fedora|redhat)/ => "$nx_conf_dir/conf.d",
+  }
   $nx_confd_purge             = false
   $nx_worker_processes        = 1
   $nx_worker_connections      = 1024

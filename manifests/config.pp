@@ -42,11 +42,11 @@ class nginx::config(
     ensure => directory,
   }
 
-  file { "${nginx::params::nx_conf_dir}/conf.d":
+  file { $nginx::params::nx_vhost_dir:
     ensure => directory,
   }
   if $confd_purge == true {
-    File["${nginx::params::nx_conf_dir}/conf.d"] {
+    File[$nginx::params::nx_vhost_dir] {
       ignore  => 'vhost_autogen.conf',
       purge   => true,
       recurse => true,
@@ -87,7 +87,7 @@ class nginx::config(
     content => template('nginx/conf.d/nginx.conf.erb'),
   }
 
-  file { "${nginx::params::nx_conf_dir}/conf.d/proxy.conf":
+  file { "${nginx::params::nx_vhost_dir}/proxy.conf":
     ensure  => file,
     content => template('nginx/conf.d/proxy.conf.erb'),
   }

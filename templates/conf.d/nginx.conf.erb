@@ -43,7 +43,7 @@ http {
 <% end -%>
 <% end -%>
 
-  include /etc/nginx/conf.d/*.conf;
+  include <%= scope.lookupvar('nginx::params::nx_vhost_dir')%>/*.conf;
 
 }
 <% if scope.lookupvar('nginx::mail') %>
