@@ -197,24 +197,4 @@ define nginx::resource::vhost (
   if ($listen_port != $ssl_port) {
     file { "${nginx::config::nx_temp_dir}/nginx.d/${name}-699": content => template('nginx/vhost/vhost_footer.erb'), }
   }
-
-  # Create SSL File Stubs if SSL is enabled
-  if ($ssl == true) {
-    file { "${nginx::config::nx_temp_dir}/nginx.d/${name}-700-ssl":
-      ensure  => $ensure ? {
-        'absent' => absent,
-        default  => 'file',
-      },
-      content => template('nginx/vhost/vhost_ssl_header.erb'),
-      notify  => Class['nginx::service'],
-    }
-    file { "${nginx::config::nx_temp_dir}/nginx.d/${name}-999-ssl":
-      ensure  => $ensure ? {
-        'absent' => absent,
-        default  => 'file',
-      },
-      content => template('nginx/vhost/vhost_ssl_footer.erb'),
-      notify  => Class['nginx::service'],
-    }
-  }
 }
