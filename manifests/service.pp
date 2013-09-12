@@ -21,7 +21,8 @@ class nginx::service(
   $command = '${#files[*]}'
   exec { 'rebuild-nginx-vhosts':
     command     => "/bin/cat ${nginx::params::nx_temp_dir}/nginx.d/* > ${nginx::params::nx_conf_dir}/conf.d/vhost_autogen.conf",
-    path        => ["/usr/bin", "/usr/sbin"],
+    path        => ["/usr/bin", "/usr/sbin", '/bin/'],
+    provider    => 'shell',
     refreshonly => true,
     unless      => "shopt -s nullglob dotglob && files=(${nginx::params::nx_temp_dir}/nginx.d/*) && ! (( ${command} )) && shopt -u nullglob dotglob",
     subscribe   => File["${nginx::params::nx_temp_dir}/nginx.d"],
