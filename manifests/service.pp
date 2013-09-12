@@ -30,7 +30,8 @@ class nginx::service(
   exec { 'rebuild-nginx-mailhosts':
     command     => "/bin/cat ${nginx::params::nx_temp_dir}/nginx.mail.d/* > ${nginx::params::nx_conf_dir}/conf.mail.d/vhost_autogen.conf",
     refreshonly => true,
-    unless      => "/usr/bin/test ! -f ${nginx::params::nx_temp_dir}/nginx.mail.d/*",
+    provider    => 'shell',
+    unless      => "shopt -s nullglob dotglob && files=(${nginx::params::nx_temp_dir}/nginx.mail.d/*) && ! (( ${command} )) && shopt -u nullglob dotglob",
     subscribe   => File["${nginx::params::nx_temp_dir}/nginx.mail.d"],
   }
   service { 'nginx':
