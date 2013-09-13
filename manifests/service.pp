@@ -18,20 +18,18 @@ class nginx::service(
   $service_restart   = $nginx::params::nx_service_restart
 ) {
 
-  $command = '${#files[*]}'
+  $command = '${#files}'
   exec { 'rebuild-nginx-vhosts':
     command     => "/bin/cat ${nginx::params::nx_temp_dir}/nginx.d/* > ${nginx::params::nx_vhost_dir}/vhost_autogen.conf",
     path        => ["/usr/bin", "/usr/sbin", '/bin/'],
-    provider    => 'shell',
     refreshonly => true,
-    unless      => "shopt -s nullglob dotglob && files=(${nginx::params::nx_temp_dir}/nginx.d/*) && ! (( ${command} )) && shopt -u nullglob dotglob",
+    unless      => "/bin/bash -c 'files=$(shopt -s nullglob dotglob; echo ${nginx::params::nx_temp_dir}/nginx.d/*) ; ! (( ${command} ))'",
     subscribe   => File["${nginx::params::nx_temp_dir}/nginx.d"],
   }
   exec { 'rebuild-nginx-mailhosts':
     command     => "/bin/cat ${nginx::params::nx_temp_dir}/nginx.mail.d/* > ${nginx::params::nx_conf_dir}/conf.mail.d/vhost_autogen.conf",
     refreshonly => true,
-    provider    => 'shell',
-    unless      => "shopt -s nullglob dotglob && files=(${nginx::params::nx_temp_dir}/nginx.mail.d/*) && ! (( ${command} )) && shopt -u nullglob dotglob",
+    unless      => "/bin/bash -c 'files=$(shopt -s nullglob dotglob; echo ${nginx::params::nx_temp_dir}/nginx.mail.d/*) ; ! (( ${command} ))'",
     subscribe   => File["${nginx::params::nx_temp_dir}/nginx.mail.d"],
   }
   service { 'nginx':
