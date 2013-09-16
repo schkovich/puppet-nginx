@@ -111,12 +111,21 @@ define nginx::resource::location (
     'absent' => absent,
     default  => file,
   }
+  $config_file = "${nginx::config::nx_vhost_dir}/${vhost}.conf"
 
   ## Check for various error conditions
   if ($vhost == undef) {
     fail('Cannot create a location reference without attaching to a virtual host')
   }
-  if (($www_root == undef) and ($proxy == undef) and ($location_alias == undef) and ($stub_status == undef) and ($fastcgi == undef) and ($location_custom_cfg == undef)) {
+
+  # www_root should not be part of location!
+  # http://wiki.nginx.org/Pitfalls
+  if (($www_root == undef) and
+  ($proxy == undef) and
+  ($location_alias == undef) and
+  ($stub_status == undef) and
+  ($fastcgi == undef) and
+  ($location_custom_cfg == undef)) {
     fail('Cannot create a location reference without a www_root, proxy, location_alias, fastcgi, stub_status, or location_custom_cfg defined')
   }
   if (($www_root != undef) and ($proxy != undef)) {
@@ -148,18 +157,20 @@ define nginx::resource::location (
 
   ## Create stubs for vHost File Fragment Pattern
   if ($ssl_only != true) {
-    file {"${nginx::config::nx_temp_dir}/nginx.d/${vhost}-${priority}-${name}":
-      ensure  => $ensure_real,
+    concat::fragment { "${vhost}-${priority}-${name}":
+      target  => $config_file,
       content => $content_real,
+      order   => $priority,
     }
   }
 
   ## Only create SSL Specific locations if $ssl is true.
   if ($ssl == true) {
     $ssl_priority = $priority + 300
-    file {"${nginx::config::nx_temp_dir}/nginx.d/${vhost}-${ssl_priority}-${name}-ssl":
-      ensure  => $ensure_real,
+    concat::fragment {"${vhost}-${ssl_priority}-${name}-ssl":
+      target  => $config_file,
       content => $content_real,
+      order   => $ssl_priority,
     }
   }
 

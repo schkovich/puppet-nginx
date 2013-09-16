@@ -17,27 +17,11 @@ class nginx::service(
   $configtest_enable = $nginx::params::nx_configtest_enable,
   $service_restart   = $nginx::params::nx_service_restart
 ) {
-
-  $command = '${#files}'
-  exec { 'rebuild-nginx-vhosts':
-    command     => "/bin/cat ${nginx::params::nx_temp_dir}/nginx.d/* > ${nginx::params::nx_vhost_dir}/vhost_autogen.conf",
-    path        => ["/usr/bin", "/usr/sbin", '/bin/'],
-    refreshonly => true,
-    unless      => "/bin/bash -c 'files=$(shopt -s nullglob dotglob; echo ${nginx::params::nx_temp_dir}/nginx.d/*) ; ! (( ${command} ))'",
-    subscribe   => File["${nginx::params::nx_temp_dir}/nginx.d"],
-  }
-  exec { 'rebuild-nginx-mailhosts':
-    command     => "/bin/cat ${nginx::params::nx_temp_dir}/nginx.mail.d/* > ${nginx::params::nx_conf_dir}/conf.mail.d/vhost_autogen.conf",
-    refreshonly => true,
-    unless      => "/bin/bash -c 'files=$(shopt -s nullglob dotglob; echo ${nginx::params::nx_temp_dir}/nginx.mail.d/*) ; ! (( ${command} ))'",
-    subscribe   => File["${nginx::params::nx_temp_dir}/nginx.mail.d"],
-  }
   service { 'nginx':
     ensure     => running,
     enable     => true,
     hasstatus  => true,
     hasrestart => true,
-    subscribe  => Exec['rebuild-nginx-vhosts', 'rebuild-nginx-mailhosts'],
   }
   if $configtest_enable == true {
     Service['nginx'] {

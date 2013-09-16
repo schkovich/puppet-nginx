@@ -15,11 +15,11 @@ describe 'nginx' do
 
 
   context 'redhat' do
-    it_behaves_like 'linux', 'redhat', 'nginx'
+    it_behaves_like 'linux', 'redhat', '6.4', 'nginx'
   end
 
   context 'debian' do
-    it_behaves_like 'linux', 'debian', 'www-data'
+    it_behaves_like 'linux', 'debian', 'Wheezy', 'www-data'
   end
 
   describe 'installs the requested package version' do
