@@ -139,7 +139,6 @@ define nginx::resource::vhost (
         'absent' => absent,
         default  => 'file',
       },
-      content => template('nginx/vhost/vhost_header.erb'),
     notify => Class['nginx::service'],
     owner  => 'root',
     group  => 'root',
@@ -160,7 +159,7 @@ define nginx::resource::vhost (
       target  => $config_file,
       content => template('nginx/vhost/vhost_header.erb'),
       order   => 01,
-  }
+    }
   }
 
   # Create the default location reference for the vHost
