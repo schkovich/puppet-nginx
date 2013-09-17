@@ -19,7 +19,7 @@ class nginx::params {
 
   $nx_conf_dir                = '/etc/nginx'
   $nx_vhost_dir = $operatingsystem ? {
-  /(?i-mx:ubuntu|debian)/        => "$nx_conf_dir/sites-enabled",
+  /(?i-mx:ubuntu|debian)/        => "$nx_conf_dir/sites-available",
   /(?i-mx:centos|fedora|redhat)/ => "$nx_conf_dir/conf.d",
   }
   $nx_confd_purge             = false
