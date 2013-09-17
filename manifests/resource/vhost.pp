@@ -163,16 +163,25 @@ define nginx::resource::vhost (
     }
   }
 
-  # Use the File Fragment Pattern to construct the configuration files.
-  # Create the base configuration file reference.
-  if ($listen_port != $ssl_port) {
-    file { "${nginx::config::nx_temp_dir}/nginx.d/${name}-001":
-      ensure  => $ensure ? {
+  $domain_log_name = regsubst($name, ' ', '_', 'G')
+  $access_log_real = $access_log ? {
+    undef   => "${nginx::params::nx_logdir}/${domain_log_name}.access.log",
+    default => $access_log,
+  }
+  $error_log_real = $error_log ? {
+    undef   => "${nginx::params::nx_logdir}/${domain_log_name}.error.log",
+    default => $error_log,
+  }
+
+  File {
+    ensure => $ensure ? {
         'absent' => absent,
         default  => 'file',
       },
-      content => template('nginx/vhost/vhost_header.erb'),
-      notify  => Class['nginx::service'],
+    notify => Class['nginx::service'],
+    owner  => 'root',
+    group  => 'root',
+    mode   => '0644',
     }
 
   concat { $config_file:
@@ -219,12 +228,14 @@ define nginx::resource::vhost (
   # Support location_cfg_prepend and location_cfg_append on default location created by vhost
   if $location_cfg_prepend {
     Nginx::Resource::Location["${name}-default"] {
-      location_cfg_prepend => $location_cfg_prepend }
+      location_cfg_prepend => $location_cfg_prepend
+    }
   }
 
   if $location_cfg_append {
     Nginx::Resource::Location["${name}-default"] {
-      location_cfg_append => $location_cfg_append }
+      location_cfg_append => $location_cfg_append
+    }
   }
 
   if $fastcgi != undef and !defined(File['/etc/nginx/fastcgi_params']) {
