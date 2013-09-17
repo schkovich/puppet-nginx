@@ -42,9 +42,11 @@ http {
   <%= key %> <%= value %>;
 <% end -%>
 <% end -%>
-
+<% if @operatingsystem == 'debian' || @operatingsystem == 'ubuntu' then -%>
+  include <%= scope.lookupvar('nginx::params::nx_conf_dir')%>/sites-enabled/*.conf;
+<% else -%>
   include <%= scope.lookupvar('nginx::params::nx_vhost_dir')%>/*.conf;
-
+<% end -%>
 }
 <% if scope.lookupvar('nginx::mail') %>
 mail {
