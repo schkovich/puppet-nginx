@@ -31,13 +31,12 @@ class nginx::mimetypes ($mime_types) {
     command => "cat ${file}.tmp >> ${file}"
   }
 # Clean up
-  file { 'tmp-two':
-    path => "${file}.tmp",
-    ensure => 'absent',
+  exec { 'tmp-two':
+    command => "rm ${file}.tmp",
     notify => Service['nginx']
   }
 
   Exec['blank'] -> Exec['last'] -> File['tmp-one'] -> Exec['concat']
-    -> File['tmp-two']
+    -> Exec['tmp-two']
 
 }
