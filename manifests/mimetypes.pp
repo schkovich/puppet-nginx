@@ -2,7 +2,15 @@ class nginx::mimetypes ($mime_types) {
 
   $file = "${nginx::params::nx_conf_dir}/mime.types"
 
-  Exec { path => [ "/bin/", "/sbin/" , "/usr/bin/", "/usr/sbin/" ] }
+  Exec {
+    path => [
+      '/bin/',
+      '/sbin/' ,
+      '/usr/bin/',
+      '/usr/sbin/',
+      '/usr/local/bin/'
+    ]
+  }
 
 # Remove blank lines from the end of mime.types
   exec {'blank':
