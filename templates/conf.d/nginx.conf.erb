@@ -42,7 +42,7 @@ http {
   <%= key %> <%= value %>;
 <% end -%>
 <% end -%>
-<%= scope.function_template(['nginx/conf.d/proxy.conf.erb']) %>
+<%= scope.function_template(['nginx/conf.d/_proxy.conf.erb']) %>
 <% if @operatingsystem == 'debian' || @operatingsystem == 'ubuntu' then -%>
   include <%= scope.lookupvar('nginx::params::nx_conf_dir')%>/sites-enabled/*.conf;
 <% else -%>
