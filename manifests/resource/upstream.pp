@@ -55,4 +55,12 @@ define nginx::resource::upstream (
     content => template('nginx/conf.d/upstream.erb'),
     notify  => Class['nginx::service'],
   }
+  ->
+  file {"${nginx::params::nx_conf_dir}/sites-enabled/${name}-upstream.conf":
+    ensure  => $ensure ? {
+    'absent' => absent,
+    default  => 'link',
+    },
+    target => "${nginx::params::nx_vhost_dir}/${name}-upstream.conf",
+  }
 }
