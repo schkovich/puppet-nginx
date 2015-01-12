@@ -136,13 +136,13 @@ define nginx::resource::location (
     'index.htm',
     'index.php'],
   $proxy                = undef,
-  $proxy_redirect       = $nginx::config::proxy_redirect,
-  $proxy_read_timeout   = $nginx::config::proxy_read_timeout,
-  $proxy_connect_timeout = $nginx::config::proxy_connect_timeout,
-  $proxy_set_header     = $nginx::config::proxy_set_header,
+  $proxy_redirect       = $::nginx::config::proxy_redirect,
+  $proxy_read_timeout   = $::nginx::config::proxy_read_timeout,
+  $proxy_connect_timeout = $::nginx::config::proxy_connect_timeout,
+  $proxy_set_header     = $::nginx::config::proxy_set_header,
   $fastcgi              = undef,
   $fastcgi_param        = undef,
-  $fastcgi_params       = "${nginx::config::conf_dir}/fastcgi_params",
+  $fastcgi_params       = "${::nginx::config::conf_dir}/fastcgi_params",
   $fastcgi_script       = undef,
   $fastcgi_split_path   = undef,
   $ssl                  = false,
@@ -159,6 +159,7 @@ define nginx::resource::location (
   $location_cfg_append  = undef,
   $location_custom_cfg_prepend  = undef,
   $location_custom_cfg_append   = undef,
+  $include              = undef,
   $try_files            = undef,
   $proxy_cache          = false,
   $proxy_cache_valid    = false,
@@ -172,14 +173,13 @@ define nginx::resource::location (
   $flv             = false,
 ) {
 
-  include nginx::params
-  $root_group = $nginx::params::root_group
+  $root_group = $::nginx::config::root_group
 
   File {
     owner  => 'root',
     group  => $root_group,
     mode   => '0644',
-    notify => Class['nginx::service'],
+    notify => Class['::nginx::service'],
   }
 
   validate_re($ensure, '^(present|absent)$',
@@ -198,7 +198,9 @@ define nginx::resource::location (
   if ($proxy != undef) {
     validate_string($proxy)
   }
-  validate_string($proxy_redirect)
+  if ($proxy_redirect != undef) {
+    validate_string($proxy_redirect)
+  }
   validate_string($proxy_read_timeout)
   validate_string($proxy_connect_timeout)
   validate_array($proxy_set_header)
@@ -258,6 +260,9 @@ define nginx::resource::location (
   if ($location_cfg_append != undef) {
     validate_hash($location_cfg_append)
   }
+  if ($include != undef) {
+    validate_array($include)
+  }
   if ($try_files != undef) {
     validate_array($try_files)
   }
@@ -294,7 +299,7 @@ define nginx::resource::location (
   }
 
   $vhost_sanitized = regsubst($vhost, ' ', '_', 'G')
-  $config_file = "${nginx::config::conf_dir}/sites-available/${vhost_sanitized}.conf"
+  $config_file = "${::nginx::config::conf_dir}/sites-available/${vhost_sanitized}.conf"
 
   $location_sanitized_tmp = regsubst($location, '\/', '_', 'G')
   $location_sanitized = regsubst($location_sanitized_tmp, '\\\\', '_', 'G')
@@ -303,8 +308,8 @@ define nginx::resource::location (
   if ($vhost == undef) {
     fail('Cannot create a location reference without attaching to a virtual host')
   }
-  if (($www_root == undef) and ($proxy == undef) and ($location_alias == undef) and ($stub_status == undef) and ($fastcgi == undef) and ($location_custom_cfg == undef)) {
-    fail('Cannot create a location reference without a www_root, proxy, location_alias, fastcgi, stub_status, or location_custom_cfg defined')
+  if (($www_root == undef) and ($proxy == undef) and ($location_alias == undef) and ($stub_status == undef) and ($fastcgi == undef) and ($location_custom_cfg == undef) and ($internal == false)) {
+    fail('Cannot create a location reference without a www_root, proxy, location_alias, fastcgi, stub_status, internal, or location_custom_cfg defined')
   }
   if (($www_root != undef) and ($proxy != undef)) {
     fail('Cannot define both directory and proxy in a virtual host')
@@ -330,7 +335,7 @@ define nginx::resource::location (
     $content_real = template('nginx/vhost/locations/empty.erb')
   }
 
-  if $fastcgi != undef and !defined(File[$fastcgi_params]) {
+  if $ensure == present and $fastcgi != undef and !defined(File[$fastcgi_params]) {
     file { $fastcgi_params:
       ensure  => present,
       mode    => '0770',
@@ -343,14 +348,14 @@ define nginx::resource::location (
     $tmpFile=md5("${vhost_sanitized}-${priority}-${location_sanitized}")
 
     concat::fragment { $tmpFile:
-      ensure  => present,
+      ensure  => $ensure,
       target  => $config_file,
       content => join([
         template('nginx/vhost/location_header.erb'),
         $content_real,
         template('nginx/vhost/location_footer.erb')
       ], ''),
-      order   => "${priority}", #lint:ignore:only_variable_string waiting on https://github.com/puppetlabs/puppetlabs-concat/commit/f70881fbfd01c404616e9e4139d98dad78d5a918
+      order   => $priority,
     }
   }
 
@@ -360,21 +365,21 @@ define nginx::resource::location (
 
     $sslTmpFile=md5("${vhost_sanitized}-${ssl_priority}-${location_sanitized}-ssl")
     concat::fragment { $sslTmpFile:
-      ensure  => present,
+      ensure  => $ensure,
       target  => $config_file,
       content => join([
         template('nginx/vhost/location_header.erb'),
         $content_real,
         template('nginx/vhost/location_footer.erb')
       ], ''),
-      order   => "${ssl_priority}", #lint:ignore:only_variable_string waiting on https://github.com/puppetlabs/puppetlabs-concat/commit/f70881fbfd01c404616e9e4139d98dad78d5a918
+      order   => $ssl_priority,
     }
   }
 
   if ($auth_basic_user_file != undef) {
     #Generate htpasswd with provided file-locations
-    file { "${nginx::config::conf_dir}/${location_sanitized}_htpasswd":
-      ensure => $ensure,
+    file { "${::nginx::config::conf_dir}/${location_sanitized}_htpasswd":
+      ensure => $ensure_real,
       mode   => '0644',
       source => $auth_basic_user_file,
     }

@@ -17,16 +17,8 @@ describe 'nginx::resource::map' do
     }
   end
 
-  let :facts do
-    {
-      :osfamily        => 'RedHat',
-      :operatingsystem => 'CentOS',
-    }
-  end
-
   let :pre_condition do
     [
-      'include ::nginx::params',
       'include ::nginx::config',
     ]
   end

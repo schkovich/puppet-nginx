@@ -4,5 +4,7 @@ files/server_test.pem
 pkg/
 pkg/
 Gemfile.lock
-spec/fixtures/
-/metadata.json
+spec/fixtures/modules
+spec/fixtures/manifests
+vendor
+.ruby-version

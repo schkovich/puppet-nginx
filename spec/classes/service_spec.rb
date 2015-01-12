@@ -1,16 +1,12 @@
 require 'spec_helper'
 describe 'nginx::service' do
 
-  let :facts do {
-    :osfamily        => 'Debian',
-    :operatingsystem => 'debian',
-  } end
-
   let :params do {
       :configtest_enable => false,
       :service_restart => '/etc/init.d/nginx configtest && /etc/init.d/nginx restart',
       :service_ensure => 'running',
-  } end   
+      :service_name => 'nginx',
+  } end
 
   context "using default parameters" do
 
@@ -26,13 +22,29 @@ describe 'nginx::service' do
   end
 
   describe "when configtest_enable => true" do
-    let(:params) {{ :configtest_enable => true,  :service_restart => '/etc/init.d/nginx configtest && /etc/init.d/nginx restart'}}
+    let :params do {
+      :configtest_enable => true,
+      :service_restart   => '/etc/init.d/nginx configtest && /etc/init.d/nginx restart',
+      :service_ensure    => 'running',
+      :service_name      => 'nginx',
+    } end
     it { is_expected.to contain_service('nginx').with_restart('/etc/init.d/nginx configtest && /etc/init.d/nginx restart') }
 
     context "when service_restart => 'a restart command'" do
-      let(:params) {{ :configtest_enable => true, :service_restart => 'a restart command' }}
+      let :params do {
+        :configtest_enable => true,
+        :service_restart   => 'a restart command',
+        :service_ensure    => 'running',
+        :service_name      => 'nginx',
+      } end
       it { is_expected.to contain_service('nginx').with_restart('a restart command') }
     end
   end
 
+  describe "when service_name => 'nginx14" do
+    let :params do {
+      :service_name => 'nginx14',
+    } end
+    it { is_expected.to contain_service('nginx').with_name('nginx14') }
+  end
 end

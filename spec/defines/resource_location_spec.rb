@@ -5,15 +5,8 @@ describe 'nginx::resource::location' do
   let :title do
     'rspec-test'
   end
-  let :facts do
-    {
-      :osfamily        => 'Debian',
-      :operatingsystem => 'debian',
-    }
-  end
   let :pre_condition do
     [
-      'include ::nginx::params',
       'include ::nginx::config',
     ]
   end
@@ -26,7 +19,6 @@ describe 'nginx::resource::location' do
         :vhost    => 'vhost1',
       } end
 
-      it { is_expected.to contain_class("nginx::params") }
       it { is_expected.to contain_class("nginx::config") }
       it { is_expected.to contain_concat__fragment("f25e14942fb58942ee13b1465a4e1719").with_content(/location rspec-test/) }
       it { is_expected.not_to contain_file('/etc/nginx/fastcgi_params') }
@@ -136,6 +128,26 @@ describe 'nginx::resource::location' do
           ],
           :match => /^\s+if \(a\) {\n\s++b;\n\s+\}/,
         },
+        {
+          :title => 'should contain rewrite rules',
+          :attr  => 'rewrite_rules',
+          :value => [
+            '^(/download/.*)/media/(.*)\..*$ $1/mp3/$2.mp3 last',
+            '^(/download/.*)/media/(.*)\..*$ $1/mp3/$2.ra  last',
+            '^/users/(.*)$ /show?user=$1? last',
+          ],
+          :match => [
+            /rewrite \^\(\/download\/\.\*\)\/media\/\(\.\*\)\\\.\.\*\$ \$1\/mp3\/\$2\.mp3 last/,
+            /rewrite \^\(\/download\/\.\*\)\/media\/\(\.\*\)\\\.\.\*\$ \$1\/mp3\/\$2\.ra  last/,
+            /rewrite \^\/users\/\(\.\*\)\$ \/show\?user=\$1\? last/,
+          ],
+        },
+        {
+          :title    => 'should not set rewrite_rules',
+          :attr     => 'rewrite_rules',
+          :value    => [],
+          :notmatch => /rewrite/
+        },
       ].each do |param|
         context "when #{param[:attr]} is #{param[:value]}" do
           let :default_params do { :location => 'location', :proxy => 'proxy_value', :vhost => 'vhost1' } end
@@ -177,6 +189,15 @@ describe 'nginx::resource::location' do
             '    test3 subtest1 "sub test value1a";',
             '    test3 subtest1 "sub test value1b";',
             '    test3 subtest2 "sub test value2";',
+          ],
+        },
+        {
+          :title => 'should contain include directives',
+          :attr  => 'include',
+          :value => [ '/file1', '/file2' ],
+          :match => [
+            %r'^\s+include\s+/file1;',
+            %r'^\s+include\s+/file2;',
           ],
         },
         {
@@ -274,7 +295,7 @@ describe 'nginx::resource::location' do
         {
           :location => 'location',
           :www_root => '/var/www/root',
-          :vhost    => 'vhost1'
+          :vhost    => 'vhost1',
         }
       end
 
@@ -283,7 +304,7 @@ describe 'nginx::resource::location' do
           :title => 'should set www_root',
           :attr  => 'www_root',
           :value => '/',
-          :match => '    root  /;'
+          :match => '    root      /;'
         },
         {
           :title => 'should set try_file(s)',
@@ -295,27 +316,7 @@ describe 'nginx::resource::location' do
           :title => 'should set index_file(s)',
           :attr  => 'index_files',
           :value => ['name1','name2'],
-          :match => '    index  name1 name2;',
-        },
-        {
-          :title => 'should contain rewrite rules',
-          :attr  => 'rewrite_rules',
-          :value => [
-            '^(/download/.*)/media/(.*)\..*$ $1/mp3/$2.mp3 last',
-            '^(/download/.*)/audio/(.*)\..*$ $1/mp3/$2.ra  last',
-            '^/users/(.*)$ /show?user=$1? last',
-          ],
-          :match => [
-            '    rewrite ^(/download/.*)/media/(.*)\..*$ $1/mp3/$2.mp3 last;',
-            '    rewrite ^(/download/.*)/audio/(.*)\..*$ $1/mp3/$2.ra  last;',
-            '    rewrite ^/users/(.*)$ /show?user=$1? last;',
-          ],
-        },
-        {
-          :title    => 'should not set rewrite_rules',
-          :attr     => 'rewrite_rules',
-          :value    => [],
-          :notmatch => /rewrite/
+          :match => '    index     name1 name2;',
         },
         {
           :title => 'should set auth_basic',
@@ -428,31 +429,31 @@ describe 'nginx::resource::location' do
           :title => 'should set www_root',
           :attr  => 'www_root',
           :value => '/',
-          :match => '    root  /;'
+          :match => %r'\s+root\s+/;'
         },
         {
           :title => 'should set fastcgi_split_path',
           :attr  => 'fastcgi_split_path',
           :value => 'value',
-          :match => '    fastcgi_split_path_info value;'
+          :match => %r'\s+fastcgi_split_path_info\s+value;'
         },
         {
           :title => 'should set try_file(s)',
           :attr  => 'try_files',
           :value => ['name1','name2'],
-          :match => '    try_files name1 name2;',
+          :match => %r'\s+try_files\s+name1 name2;',
         },
         {
           :title => 'should set fastcgi_params',
           :attr  => 'fastcgi_params',
           :value => 'value',
-          :match => /^[ ]+include\s+value;/
+          :match => %r'\s+include\s+value;'
         },
         {
           :title => 'should set fastcgi_pass',
           :attr  => 'fastcgi',
           :value => 'value',
-          :match => '    fastcgi_pass value;'
+          :match => %r'\s+fastcgi_pass\s+value;'
         },
       ].each do |param|
         context "when #{param[:attr]} is #{param[:value]}" do
@@ -502,10 +503,6 @@ describe 'nginx::resource::location' do
                   with_content(%r|fastcgi_param\s+CUSTOM_PARAM\s+value;|).
                   with_content(%r|fastcgi_param\s+CUSTOM_PARAM2\s+value2;|)
         end
-        it "should add comment # Enable custom fastcgi_params" do
-        should contain_concat__fragment(Digest::MD5.hexdigest("vhost1-500-#{params[:location]}")).
-                  with_content(%r|# Enable custom fastcgi_params\s+|)
-        end
       end
 
       context "when fastcgi_param is not set" do
@@ -528,7 +525,19 @@ describe 'nginx::resource::location' do
           :title => 'should set proxy_cache',
           :attr  => 'proxy_cache',
           :value => 'value',
-          :match => /^[ ]+proxy_cache\s+value;/,
+          :match => /^\s+proxy_cache\s+value;/,
+        },
+        {
+          :title    => 'should not set proxy_cache_valid',
+          :attr     => 'proxy_cache_valid',
+          :value    => false,
+          :notmatch => /proxy_cache_valid\b/
+        },
+        {
+          :title => 'should set proxy_cache_valid',
+          :attr  => 'proxy_cache_valid',
+          :value => 'value',
+          :match => /^\s+proxy_cache_valid\s+value;/,
         },
         {
           :title    => 'should not set proxy_cache',
@@ -536,70 +545,50 @@ describe 'nginx::resource::location' do
           :value    => false,
           :notmatch => /proxy_cache\b/
         },
-        {
+	{
           :title => 'should set proxy_pass',
           :attr  => 'proxy',
           :value => 'value',
-          :match => /^[ ]+proxy_pass\s+value;/,
+          :match => /^\s+proxy_pass\s+value;/,
         },
         {
           :title => 'should set proxy_read_timeout',
           :attr  => 'proxy_read_timeout',
           :value => 'value',
-          :match => '    proxy_read_timeout  value;',
+          :match => %r'\s+proxy_read_timeout\s+value;',
         },
         {
           :title => 'should set proxy_connect_timeout',
           :attr  => 'proxy_connect_timeout',
           :value => 'value',
-          :match => '    proxy_connect_timeout  value;',
+          :match => %r'\s+proxy_connect_timeout\s+value;',
         },
         {
           :title => 'should set proxy_read_timeout',
           :attr  => 'proxy_read_timeout',
           :value => 'value',
-          :match => '    proxy_read_timeout  value;',
+          :match => %r'\s+proxy_read_timeout\s+value;',
         },
         {
           :title => 'should set proxy headers',
           :attr  => 'proxy_set_header',
           :value => [ 'X-TestHeader1 value1', 'X-TestHeader2 value2' ],
           :match => [
-            /^[ ]+proxy_set_header\s+X-TestHeader1 value1;/,
-            /^[ ]+proxy_set_header\s+X-TestHeader2 value2;/,
+            /^\s+proxy_set_header\s+X-TestHeader1 value1;/,
+            /^\s+proxy_set_header\s+X-TestHeader2 value2;/,
           ]
         },
         {
           :title => 'should set proxy_method',
           :attr  => 'proxy_method',
           :value => 'value',
-          :match => '    proxy_method        value;',
+          :match => %r'\s+proxy_method\s+value;',
         },
         {
           :title => 'should set proxy_set_body',
           :attr  => 'proxy_set_body',
           :value => 'value',
-          :match => '    proxy_set_body      value;',
-        },
-        {
-          :title => 'should contain rewrite rules',
-          :attr  => 'rewrite_rules',
-          :value => [
-            '^(/download/.*)/media/(.*)\..*$ $1/mp3/$2.mp3 last',
-            '^(/download/.*)/audio/(.*)\..*$ $1/mp3/$2.ra  last',
-            '^/users/(.*)$ /show?user=$1? last',
-          ],
-          :match => [
-            '    rewrite ^(/download/.*)/media/(.*)\..*$ $1/mp3/$2.mp3 last;',
-            '    rewrite ^(/download/.*)/audio/(.*)\..*$ $1/mp3/$2.ra  last;',
-            '    rewrite ^/users/(.*)$ /show?user=$1? last;',
-          ],
-        },
-        {
-          :title    => 'should not set rewrite_rules',
-          :attr     => 'rewrite_rules',
-          :value    => [],
-          :notmatch => /rewrite/
+          :match => %r'\s+proxy_set_body\s+value;',
         },
       ].each do |param|
         context "when #{param[:attr]} is #{param[:value]}" do
@@ -634,7 +623,7 @@ describe 'nginx::resource::location' do
           :proxy_cache_valid => '10m',
         } end
 
-        it { is_expected.to contain_concat__fragment(Digest::MD5.hexdigest("vhost1-500-location")).with_content(/proxy_cache_valid   10m;/) }
+        it { is_expected.to contain_concat__fragment(Digest::MD5.hexdigest("vhost1-500-location")).with_content(/proxy_cache_valid\s+10m;/) }
       end
     end
 
@@ -707,7 +696,7 @@ describe 'nginx::resource::location' do
           :vhost => 'vhost1',
         } end
 
-        it { expect { is_expected.to contain_class('nginx::resource::location') }.to raise_error(Puppet::Error, /Cannot create a location reference without a www_root, proxy, location_alias, fastcgi, stub_status, or location_custom_cfg defined/) }
+        it { expect { is_expected.to contain_class('nginx::resource::location') }.to raise_error(Puppet::Error, /Cannot create a location reference without a www_root, proxy, location_alias, fastcgi, stub_status, internal, or location_custom_cfg defined/) }
       end
 
       context "www_root and proxy are set" do
