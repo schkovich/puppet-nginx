@@ -13,8 +13,11 @@
 # Sample Usage:
 #
 # This class file is not called directly
-class nginx::package::redhat {
-  $redhat_packages = ['nginx', 'gd', 'libXpm', 'libxslt']
+class nginx::package::redhat (
+  $manage_repo    = true,
+  $package_ensure = 'present',
+  $package_name   = 'nginx',
+) {
 
   case $::operatingsystem {
     'fedora': {
@@ -23,13 +26,13 @@ class nginx::package::redhat {
       # fedora 19 has 1.4.x packages are in
 
       # fedora 18 users will need to supply their own nginx 1.4 rpms and/or repo
-      if $::lsbmajdistrelease < 19 {
+      if $::lsbmajdistrelease and $::lsbmajdistrelease < 19 {
         notice("${::operatingsystem} ${::lsbmajdistrelease} does not supply nginx >= 1.4 packages")
       }
     }
     default: {
       case $::lsbmajdistrelease {
-        5, 6: {
+        5, 6, 7: {
           $os_rel = $::lsbmajdistrelease
         }
         default: {
@@ -42,27 +45,27 @@ class nginx::package::redhat {
       # http://nginx.org/packages/centos appears to be identical to
       # http://nginx.org/packages/rhel
       # no other dedicated dirs exist for platforms under $::osfamily == redhat
-      yumrepo { 'nginx-release':
-        baseurl  => "http://nginx.org/packages/rhel/${os_rel}/\$basearch/",
-        descr    => 'nginx repo',
-        enabled  => '1',
-        gpgcheck => '1',
-        priority => '1',
-        gpgkey   => 'http://nginx.org/keys/nginx_signing.key',
-      }
+      if $manage_repo {
+        yumrepo { 'nginx-release':
+          baseurl  => "http://nginx.org/packages/rhel/${os_rel}/\$basearch/",
+          descr    => 'nginx repo',
+          enabled  => '1',
+          gpgcheck => '1',
+          priority => '1',
+          gpgkey   => 'http://nginx.org/keys/nginx_signing.key',
+          before   => Package[$package_name],
+        }
 
-      Yumrepo['nginx-release'] -> Package[$redhat_packages]
+        file { '/etc/yum.repos.d/nginx-release.repo':
+          ensure  => present,
+          require => Yumrepo['nginx-release'],
+        }
+      }
     }
   }
 
-  #Define file for nginx-repo so puppet doesn't delete it
-  file { '/etc/yum.repos.d/nginx-release.repo':
-    ensure  => present,
-    require => Yumrepo['nginx-release'],
-  }
-
-  package { $redhat_packages:
-    ensure  => $nginx::package_ensure,
+  package { $package_name:
+    ensure  => $package_ensure,
   }
 
 }
